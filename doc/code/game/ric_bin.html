@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Trova il Numero Misterioso</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    max-width: 900px;
+    margin: 20px auto;
+    text-align: center;
+  }
+  h1 {
+    margin-bottom: 5px;
+  }
+  #counters {
+    margin-bottom: 15px;
+  }
+  #cards {
+    display: grid;
+    grid-template-columns: repeat(10, 60px);
+    grid-gap: 8px;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  .card {
+    width: 60px;
+    height: 60px;
+    font-size: 22px;
+    cursor: pointer;
+    border-radius: 8px;
+    background-color: #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    transition: background-color 0.3s ease;
+    border: 2px solid #ccc;
+  }
+  .card.revealed.correct {
+    background-color: #a6e3a1;
+    border-color: #4caf50;
+    cursor: default;
+  }
+  .card.revealed.wrong {
+    background-color: #f19c9c;
+    border-color: #f44336;
+    cursor: default;
+  }
+  button#reset {
+    font-size: 16px;
+    padding: 10px 20px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<h1>Trova il Numero Misterioso</h1>
+<div id="intro">Devi trovare il numero misterioso!</div>
+<div id="target" style="font-weight:bold; font-size: 20px; margin: 10px 0;"></div>
+
+<div id="counters">
+  Tentativi: <span id="tries">0</span> |
+  Carte Girate: <span id="flipped">0</span> |
+  Carte Scoperte: <span id="revealed">0</span>
+</div>
+
+<div id="cards"></div>
+
+<button id="reset">🔄 Ricomincia</button>
+
+<div id="gameStats" style="margin-top: 20px; font-weight: bold;">
+  Partite giocate: <span id="gamesPlayed">0</span> |
+  Media mosse: <span id="avgMoves">0</span>
+</div>
+
+<script>
+  const coverEmojis = [
+    "🐶", "🐱", "🐰", "🐻", "🦊", "🐼", "🐨", "🐯", "🦁", "🐮",
+    "🐷", "🐸", "🐵", "🐔", "🐧", "🐦", "🦉", "🦄", "🐴", "🐝",
+    "🐢", "🐬", "🦋", "🐞", "🐙", "🦀", "🐡", "🦜", "🐓", "🦩"
+  ];
+  let cardValues = [];
+  let targetValue = null;
+  let tries = 0;
+  let flipped = 0;
+  let revealed = 0;
+  const cardsCount = 70;
+
+  let gamesPlayed = 0;
+  let totalMoves = 0;
+
+  const cardsContainer = document.getElementById('cards');
+  const triesSpan = document.getElementById('tries');
+  const flippedSpan = document.getElementById('flipped');
+  const revealedSpan = document.getElementById('revealed');
+  const targetDiv = document.getElementById('target');
+  const resetBtn = document.getElementById('reset');
+  const countersDiv = document.getElementById('counters');
+
+  const gamesPlayedSpan = document.getElementById('gamesPlayed');
+  const avgMovesSpan = document.getElementById('avgMoves');
+
+  function updateGameStats() {
+    gamesPlayedSpan.textContent = `${gamesPlayed}`;
+    const avg = gamesPlayed === 0 ? 0 : (totalMoves / gamesPlayed).toFixed(2);
+    avgMovesSpan.textContent = `${avg}`;
+  }
+
+  function randomSample(rangeStart, rangeEnd, count) {
+    const arr = [];
+    while (arr.length < count) {
+      const num = Math.floor(Math.random() * (rangeEnd - rangeStart + 1)) + rangeStart;
+      if (!arr.includes(num)) arr.push(num);
+    }
+    return arr.sort((a,b) => a-b);
+  }
+
+  function initGame() {
+    cardValues = randomSample(1, 200, cardsCount); // allargato range per 70 carte uniche
+    targetValue = cardValues[Math.floor(Math.random() * cardsCount)];
+    tries = 0;
+    flipped = 0;
+    revealed = 0;
+    triesSpan.textContent = tries;
+    flippedSpan.textContent = flipped;
+    revealedSpan.textContent = revealed;
+    targetDiv.textContent = "🎯 Numero da trovare: " + targetValue;
+
+    cardsContainer.innerHTML = '';
+    for (let i=0; i<cardsCount; i++) {
+      const btn = document.createElement('button');
+      btn.classList.add('card');
+      btn.textContent = coverEmojis[Math.floor(Math.random()*coverEmojis.length)];
+      btn.dataset.index = i;
+      btn.dataset.revealed = "false";
+      btn.addEventListener('click', onCardClick);
+      cardsContainer.appendChild(btn);
+    }
+
+    updateGameStats();
+  }
+
+  function onCardClick(e) {
+    const btn = e.currentTarget;
+    if (btn.dataset.revealed === "true") return;
+
+    const i = Number(btn.dataset.index);
+    const val = cardValues[i];
+
+    btn.dataset.revealed = "true";
+    btn.textContent = val;
+    tries++;
+    flipped++;
+    revealed++;
+    triesSpan.textContent = tries;
+    flippedSpan.textContent = flipped;
+    revealedSpan.textContent = revealed;
+
+    if (val === targetValue) {
+      btn.classList.add('correct');
+      alert("Hai vinto! 🔥 Bravo!");
+      gamesPlayed++;
+      totalMoves += tries;
+      updateGameStats();
+      disableAllCards();
+    } else {
+      btn.classList.add('wrong');
+    }
+  }
+
+  function disableAllCards() {
+    const allCards = cardsContainer.querySelectorAll('button.card');
+    allCards.forEach(btn => btn.disabled = true);
+  }
+
+  resetBtn.addEventListener('click', () => {
+    initGame();
+  });
+
+  // Avvia gioco al caricamento pagina
+  window.onload = initGame;
+</script>
+
+</body>
+</html>

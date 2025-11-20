@@ -1,0 +1,1799 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;800&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <title>The Graph Castle</title>
+  <style>
+    :root { --parchment: #f3e9d2; }
+
+    h1 {
+      font-family: 'Cinzel Decorative', 'UnifrakturCook', serif;
+      text-align: center;
+      font-size: 48px;
+      color: #222;
+      margin: 20px 0 0 0;
+      text-shadow: 2px 2px 6px rgba(0,0,0,0.3);
+      letter-spacing: 2px;
+    }
+
+    #right-pane .room-info h2,
+    #right-pane .map-area h2,
+    #room-box h2 {
+      font-family: 'Cinzel Decorative', 'UnifrakturCook', serif;
+    }
+    body {
+      font-family: sans-serif;
+      background-color: var(--parchment); /* niente cornice esterna grigia */
+      margin: 0; /* rimuove margine default del browser */
+      padding: 0; /* rimuove padding esterno */
+    }
+
+    /* Modalità Dislessia: usa Arial, Helvetica, sans-serif */
+    body.dyslexia-mode,
+    body.dyslexia-mode * {
+      font-family: Arial, Helvetica, sans-serif !important;
+      letter-spacing: 0.02em;
+      line-height: 1.5;
+    }
+    /* Titoli, bottoni, label e testo storia: override font e rimozione corsivo/ombre */
+    body.dyslexia-mode h1,
+    body.dyslexia-mode h2,
+    body.dyslexia-mode #room-box h2,
+    body.dyslexia-mode #story-title,
+    body.dyslexia-mode #story-text,
+    body.dyslexia-mode .door-label,
+    body.dyslexia-mode #top-bar .bar-right > * {
+      font-family: Arial, Helvetica, sans-serif !important;
+    }
+    body.dyslexia-mode #story-text { font-style: normal; text-shadow: none; letter-spacing: 0.02em; }
+
+    /* Wrapper per allineare i padding laterali di top-bar e contenuto */
+    .page-inner { padding: 0 15px; box-sizing: border-box; }
+
+    .page-inner, #game-container {
+      max-width: 98%;
+      margin-left: auto;
+      margin-right: auto;
+      box-sizing: border-box;
+    }
+
+    #game-container {
+      background-color: transparent;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: -20px;
+      width: 100%;
+      height: 100vh; /* occupa tutto, senza lasciare bande fuori */
+      display: flex;
+      gap: 20px;
+    }
+
+    /* Top bar sopra a stanza e descrizione */
+    #top-bar {
+        width: 100%;
+        padding: 6px 0 0 0; /* padding laterale demandato a .page-inner */
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between; /* storia a sx, controlli a dx */
+        box-sizing: border-box;
+        position: relative; /* per il pannello zaino assoluto */
+        border: 3px solid #000;
+        border-radius: 10px;
+        background-color: transparent;
+        padding: 10px 20px; /* più spazio interno intorno a titolo e bottoni */
+        box-shadow: inset 0 0 0 2px rgba(0,0,0,0.1);
+    }
+    #top-bar .bar-left {
+      flex: 0 0 90%;
+      max-width: 90%;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    #top-bar .bar-right {
+      display: flex;
+      padding: 20px 0 0 0; /* padding laterale demandato a .page-inner */
+      flex-direction: column;
+      justify-content: center; /* centra verticalmente */
+      align-items: stretch;
+      width: 100%;
+      gap: 8px;
+    }
+
+    #top-bar .bar-right > * {
+      width: 100%;
+      box-sizing: border-box;
+      text-align: center;
+      border: 3px solid #000;
+      border-radius: 8px;
+      background-color: var(--parchment);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Cinzel Decorative', 'UnifrakturCook', serif;
+      height: 32px;
+    }
+    #story-title {
+      font-family: 'Cinzel Decorative', 'UnifrakturCook', serif;
+      font-size: 18px;
+      color: #222;
+      margin: 0;
+    }
+    #story-text {
+      font-family: 'Cormorant Garamond', 'Playfair Display', serif;
+      font-size: 18px;
+      font-style: italic;
+      color: #2b1e17;
+      line-height: 1.5;
+      letter-spacing: 0.3px;
+      text-shadow: 0.5px 0.5px 2px rgba(0,0,0,0.15);
+      margin: 0;
+      text-align: justify;
+      margin-right: 15px;
+    }
+    .extra-btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 0;
+      cursor: pointer;
+      font-size: 12px;
+      background-color: var(--parchment);
+      display: inline-flex;
+      align-items: center;
+    }
+    #top-bar .stat {
+      font-family: 'Cinzel Decorative', 'UnifrakturCook', serif;
+      font-size: 14px;
+      color: #333;
+    }
+
+    /* Zaino (inventory) */
+    .bag-btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 0;
+      cursor: pointer;
+      font-size: 12px;
+      background-color: var(--parchment);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .bag-panel {
+      position: absolute;
+      top: calc(100% + 4px);  /* subito sotto il bottone */
+      right: 0;
+      background: transparent; /* nessun riquadro */
+      border: none;
+      padding: 0;
+      box-shadow: none;
+      z-index: 1000;
+      display: grid;                 /* griglia 2x2 compatta */
+      grid-template-columns: repeat(2, auto);
+      grid-auto-rows: auto;
+      gap: 6px;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .bag-icon, .bag-missing {
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      font-size: 22px;   /* dimensione icona */
+    }
+    .bag-missing { opacity: 0.35; }
+
+    .bag-panel.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-10px);
+    }
+
+    .hidden { display: none; }
+
+
+    /* Bottone raccogli oggetto nella sezione stanza */
+    .collect-btn {
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid #333;
+      background: var(--parchment);
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .collect-btn:hover { opacity: 0.8; }
+
+    #left-pane, #right-pane { display: flex; flex-direction: column; flex: 1; }
+    #right-pane { min-height: 0; padding-top: var(--right-offset, 0px); transition: padding-top 0.2s ease; }
+    #left-pane { align-items: center; justify-content: center; }
+
+    /* Stanza quadrata */
+    #room-box {
+      --room-pad: 25px;          /* padding interno del box stanza */
+      --room-border: 3px;         /* spessore bordo stanza */
+      border: var(--room-border) solid #000;
+      border-radius: 10px;
+      padding: var(--room-pad);
+      margin: 0;
+      width: 70%;
+      margin-top: -150px;
+      max-width: 640px;
+      aspect-ratio: 1 / 1; /* rende quadrato */
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background-color: transparent;
+      position: relative;
+    }
+
+    /* Pannello destro */
+    #right-pane .room-info { padding: 6px 4px 10px; flex: 0 0 25%; min-height: 0; overflow: auto; }
+    #right-pane .room-info h2 { margin: 0 0 6px; }
+    #right-pane .room-info p {
+      font-family: 'Cormorant Garamond', 'Playfair Display', serif;
+      font-size: 18px;
+      font-style: italic;
+      color: #2b1e17;
+      line-height: 1.5;
+      letter-spacing: 0.3px;
+      text-shadow: 0.5px 0.5px 2px rgba(0,0,0,0.15);
+      margin: 0;
+    }
+
+    .map-note {
+      font-family: 'Cormorant Garamond', 'Playfair Display', serif;
+      font-size: 16px;
+      font-style: italic;
+      color: #2b1e17;
+      line-height: 1.5;
+      letter-spacing: 0.3px;
+      text-shadow: 0.5px 0.5px 2px rgba(0,0,0,0.15);
+      margin: -2px 0 0;
+    }
+    #right-pane .room-info .meta { 
+        display: flex; align-items: center; gap: 12px; margin-top: 8px; 
+        transform: translate(-50px, -50px); /* sposta la mappa leggermente a sinistra e verso l'alto */
+    }
+
+    #right-pane .map-area { flex: 0 1 75%; display: flex; flex-direction: column; min-height: 0;
+      padding-left: 20px; /* sposta la mappa leggermente a sinistra */
+      transform: translate(-12px, 0px); /* sposta la mappa leggermente a sinistra */
+    }
+    #right-pane .map-area h2 { margin: 10px 0 6px; }
+    #right-pane .map-area svg { width: 100%; height: 100%; display: block; }
+    #mappa-magica { overflow: visible; }
+    /* Abbassa solo il grafico (non i titoli/descrizioni) */
+    #right-pane .map-area svg#mappa-magica {
+      margin-top: 14px;              /* abbassa leggermente la mappa */
+      height: calc(100% - 14px);     /* mantiene l’altezza totale coerente */
+    }
+    /* Drag nodi mappa */
+    #mappa-magica .draggable { cursor: grab; }
+    #mappa-magica .dragging  { cursor: grabbing; }
+
+    #collegamenti li {
+      margin: 6px 0;
+    }
+
+    #collegamenti li a {
+      text-decoration: none;
+      color: blue;
+      cursor: pointer;
+    }
+
+    #collegamenti li a:hover {
+      text-decoration: underline;
+    }
+
+    #collegamenti {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      list-style-type: none;
+      padding: 0;
+    }
+
+    #collegamenti li {
+      margin: 0;
+    }
+
+    #collegamenti li button {
+      width: 100%;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #333;
+      cursor: pointer;
+      font-size: 14px;
+      background-color: var(--parchment); /* stesso colore della pergamena */
+      color: inherit;
+      box-shadow: none;
+    }
+
+
+    #room-box h2 {
+      font-size: 2.5em;
+      line-height: 1.1;
+      color: #424242;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin-top: -10px;
+      margin-bottom: 5px;
+      text-align: center;
+      z-index: 1;
+      user-select: none;
+      pointer-events: none;
+      transform: rotateX(45deg);
+      opacity: 0.6;
+    }
+
+    #room-box p {
+      text-align: center;
+      margin: 0;
+      font-size: 18px;
+      color: #999;
+      z-index: 1;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    #doors {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none; /* let clicks pass except on buttons */
+    }
+
+    .door {
+      position: absolute;
+      padding: 6px 10px;
+      border-radius: 4px;
+      border: 2px solid #654321;
+      background-color: var(--parchment); /* stesso colore della pergamena */
+      cursor: pointer;
+      font-size: 18px;
+      min-width: 60px;
+      pointer-events: auto;
+      box-shadow: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s;
+    }
+
+
+    .door:hover {
+      transform: scale(1.2);
+      opacity: 1;
+    }
+
+    .door.north {
+      top: -16px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .door.south {
+      bottom: -16px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .door.east {
+      right: 0;                      /* aggancio al bordo interno del box */
+      top: 60%;
+      transform-origin: 100% 50%;    /* perno sul lato destro (aderenza al muro) */
+      transform: translateY(-65%) rotate(90deg);
+    }
+
+    .door.west {
+      left: 0;                       /* aggancio al bordo interno del box */
+      top: 40%;
+      transform-origin: 0% 50%;      /* perno sul lato sinistro (aderenza al muro) */
+      transform: translateY(-35%) rotate(90deg);
+    }
+    .door .door-label { display: inline-block; white-space: nowrap; pointer-events: none; }
+    /* Porte: stile "come le descrizioni" quando NON in modalità Accessibilità */
+    body:not(.dyslexia-mode) .door .door-label {
+      font-family: 'Cormorant Garamond', 'Playfair Display', serif;
+      font-style: italic;
+      letter-spacing: 0.3px;
+      text-shadow: 0.5px 0.5px 2px rgba(0,0,0,0.15);
+    }
+    .door.east .door-label, .door.west .door-label {
+      transform: rotate(-90deg);
+      white-space: normal;      /* permetti a capo */
+      line-height: 1.1;         /* compatta le righe */
+      text-align: center;       /* centratura verticale/orizzontale del testo */
+      display: inline-block;
+    }
+    
+
+    .door.tunnel {
+        position: absolute;
+        bottom: 20%;
+        left: 50%;
+        transform: translateX(-50%);      /* lasciamo solo il centraggio */
+        width: 120px;                      /* più largo che alto = ellisse */
+        height: 20px;
+        border-radius: 50% / 65%;          /* ellisse “schiacciata” */
+        border: none;
+        background:
+          /* alone interno leggero (riflesso) */
+          radial-gradient(ellipse at 50% 20%, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 50%),
+          /* profondità del buco */
+          radial-gradient(ellipse at 50% 60%,
+            #afafaf 42%,
+            #7a7a7a 60%,
+            #626262 72%,
+            rgba(98, 98, 98, 0.85) 82%,
+            rgba(0,0,0,0) 100%);
+        box-shadow:
+          0 12px 18px rgba(0,0,0,0.35),     /* ombra esterna sul pavimento */
+          inset 0 -12px 18px rgba(0,0,0,0.75), /* profondità interna */
+          inset 0 4px 8px rgba(255,255,255,0.06); /* lieve “ring” superiore */
+        color: transparent;  /* niente testo dentro */
+        font-size: 0;
+        cursor: pointer;
+    }
+    .door.tunnel::after {
+        content: "";
+        position: absolute;
+        inset: 6% 8%;
+        border-radius: 50% / 60%;
+        background: radial-gradient(ellipse at 50% 55%, rgba(10, 10, 10, 0.9) 60%, rgba(0,0,0,0) 80%);
+        filter: blur(0.5px);
+        pointer-events: none;
+    }
+
+    #back-btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 0;
+      cursor: pointer;
+      font-size: 12px;
+      background-color: var(--parchment);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    #omino {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 32px;
+      z-index: 10;
+    }
+
+    /* Oggetto nella stanza (blinking/pulsing) */
+    .room-item {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      /* translate con variabili per non rompere l'animazione di scale */
+      transform: translate(var(--tx, -50%), var(--ty, -50%)) scale(1);
+      font-size: 28px;
+      line-height: 1;
+      cursor: pointer;
+      z-index: 9;
+      pointer-events: auto;
+      animation: roomItemPulse 1.2s ease-in-out infinite;
+      filter: drop-shadow(0 2px 1px rgba(0,0,0,0.25));
+      user-select: none;
+    }
+
+    /* Fessura nella Sala della Perla */
+    .room-window {
+      animation: windowPulse 1.6s ease-in-out infinite;
+      cursor: pointer;
+      transition: transform 0.2s ease, filter 0.2s ease;
+      z-index: 20;
+      pointer-events: auto;
+    }
+
+    .room-window:hover {
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)) brightness(1.1);
+    }
+
+    /* Pergamena decorativa vicino alla fessura (solo Livello 2) */
+    .room-scroll {
+      position: absolute;
+      font-size: 36px;
+      line-height: 1;
+      pointer-events: none; /* non blocca il click sulla fessura */
+      z-index: 18; /* sotto la fessura (z=20) ma sopra il pavimento */
+      filter: drop-shadow(0 2px 2px rgba(0,0,0,0.35));
+      user-select: none;
+    }
+
+    /* In Livello 2 (dark), pulsa la pergamena e NON il buco */
+    body.dark-mode .room-window { animation: none !important; pointer-events: none; cursor: default; }
+    body.dark-mode .room-scroll { animation: scrollPulse 1.6s ease-in-out infinite; pointer-events: auto; cursor: pointer; }
+
+    @keyframes scrollPulse {
+      0%   { transform: rotate(-10deg) scale(1);   opacity: 0.9; }
+      50%  { transform: rotate(-10deg) scale(1.15); opacity: 1; }
+      100% { transform: rotate(-10deg) scale(1);   opacity: 0.9; }
+    }
+
+    @keyframes windowPulse {
+      0%   { transform: rotate(90deg) scale(1);   opacity: 0.8; }
+      50%  { transform: rotate(90deg) scale(1.15); opacity: 1; }
+      100% { transform: rotate(90deg) scale(1);   opacity: 0.8; }
+    }
+    .room-item.collected {
+      animation: none;            /* niente blink */
+      font-size: 18px;            /* più piccolo del pezzo, è un'etichetta */
+      opacity: 0.95;
+    }
+
+    @keyframes roomItemPulse {
+      0%   { transform: translate(var(--tx, -50%), var(--ty, -50%)) scale(1);   opacity: 0.9; }
+      50%  { transform: translate(var(--tx, -50%), var(--ty, -50%)) scale(1.2); opacity: 1;   }
+      100% { transform: translate(var(--tx, -50%), var(--ty, -50%)) scale(1);   opacity: 0.9; }
+    }
+
+    /* Popup fessura */
+    .popup-fessura {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+
+    .popup-fessura.hidden {
+      display: none;
+    }
+
+    .popup-fessura .popup-content {
+      background-color: var(--parchment);
+      border: 3px solid #000;
+      border-radius: 10px;
+      padding: 20px 30px;
+      text-align: center;
+      max-width: 400px;
+      font-family: 'Cinzel Decorative', 'UnifrakturCook', serif;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+
+    .popup-fessura button {
+      margin-top: 15px;
+      padding: 6px 12px;
+      font-size: 14px;
+      background-color: var(--parchment);
+      border: 2px solid #000;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .popup-fessura button:hover {
+      background-color: #f0e0b0;
+    }
+
+    /* Popup in dark mode */
+    body.dark-mode .popup-fessura .popup-content {
+      background-color: var(--panel);
+      color: var(--fg);
+      border-color: var(--fg);
+      box-shadow: 0 4px 12px rgba(255,255,255,0.07);
+    }
+    body.dark-mode .popup-fessura button {
+      background-color: var(--panel);
+      color: var(--fg);
+      border-color: var(--fg);
+    }
+    body.dark-mode .popup-fessura button:hover {
+      background-color: #1e1e1e;
+    }
+
+    #level2-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: var(--parchment);
+      border: 3px solid #000;
+      border-radius: 10px;
+      padding: 10px 18px;
+      font-family: 'Cinzel Decorative', 'UnifrakturCook', serif;
+      font-size: 16px;
+      cursor: default;
+      pointer-events: none;
+      opacity: 0.6;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      z-index: 2100;
+      display: none;
+    }
+
+    #level2-btn:hover {
+      background-color: #f0e0b0;
+    }
+    /* ===== DARK MODE ===== */
+    body.dark-mode { --bg:#0f0f10; --fg:#eaeaea; --muted:#bdbdbd; --panel:#171717; --accent:#FFD700; --border:#555; }
+    body.dark-mode { background-color: var(--bg); color: var(--fg); }
+    body.dark-mode h1 { color: var(--fg); text-shadow: none; }
+    body.dark-mode #top-bar { border-color: var(--fg); box-shadow: inset 0 0 0 2px rgba(255,255,255,0.08); }
+    body.dark-mode #story-title { color: var(--fg); }
+    body.dark-mode #story-text { color: var(--fg); text-shadow: none; }
+    body.dark-mode #right-pane .room-info p { color: var(--fg); text-shadow: none; }
+    body.dark-mode .map-note { color: var(--muted); text-shadow: none; }
+    body.dark-mode #room-box { border-color: var(--fg); }
+    body.dark-mode #room-box h2 { color: var(--fg); opacity: 0.6; }
+    body.dark-mode #room-box p { color: var(--muted); }
+    body.dark-mode #top-bar .bar-right > *,
+    body.dark-mode .bag-btn,
+    body.dark-mode #back-btn,
+    body.dark-mode .collect-btn,
+    body.dark-mode .extra-btn,
+    body.dark-mode .door { background-color: var(--panel); color: var(--fg); border-color: var(--border); }
+    body.dark-mode #level2-btn { background-color: var(--panel); color: var(--fg); border-color: var(--fg); }
+    body.dark-mode #mappa-magica text { fill: var(--fg) !important; }
+    body.dark-mode #mappa-magica .edge { stroke: #aaa !important; }
+body.dark-mode #mappa-magica circle { stroke: #ccc; }
+  </style>
+</head>
+<body>
+  <h1>THE GRAPH CASTLE</h1>
+  <div class="page-inner">
+    <div id="top-bar">
+      <div class="bar-left">
+        <div id="story-title">"Una fessura  farà luce sulla corona"</div>
+        <div id="story-text">
+Nel regno di Grafinor serpeggia il sospetto.  E' stato scoperto un segreto terribile sul sovrano, un segreto così oscuro da poter incrinare per sempre la corona.  
+Le prove di tale verità sono custodite lontano, nella terra di confine, nel Castello del Lord di Albero Rosso e Nero.  
+Solo un messaggio, portato da un piccione viaggiatore, può attraversare le frontiere senza destare sospetti.  
+
+Il saggio <b>Edsger</b>, il più acuto tra i custodi del sapere, è incaricato di riceverlo.  
+Il piccione potrà entrare soltanto da un punto del castello: una <b>finestrella senza vetri</b>, una fessura così stretta che solo un piccolo volatile potrebbe attraversarla.  
+
+Durante il giorno, Edsger può muoversi liberamente tra le stanze, osservando, annotando, esplorando ogni angolo del castello in cerca della fessura segreta.  
+Ma quando cala la notte, le guardie si muovono silenziose e i corridoi diventano pericolosi.  
+Il saggio dovrà trovare il <b>cammino più breve</b> per raggiungere, quando sarà il momento, la finestra senza essere scoperto.  
+
+Ogni passo in più potrebbe tradirlo.  
+Ogni movimento, decidere il destino del regno.
+        </div>
+      </div>
+      <div class="bar-right">
+        <span class="stat">Passi: <span id="passi">0</span></span>
+        <button id="bag-btn" class="bag-btn">Zaino (0/4)</button>
+        <button id="dyslexia-btn" class="extra-btn" aria-pressed="false" title="Attiva font ad alta leggibilità">Accessibilità</button>
+        <button id="back-btn">Ricomincia</button>
+        <div id="bag-panel" class="bag-panel hidden"></div>
+      </div>
+    </div>
+  </div>
+  <div id="game-container">
+    <div id="left-pane">
+      <div id="room-box">
+        <h2 id="stanza-title"></h2>
+        <div id="doors"></div>
+        <div id="omino">🧙🏻‍♂️</div>
+      </div>
+    </div>
+    <div id="right-pane">
+      <div class="room-info">
+        <h2 id="info-title"></h2>
+        <p id="info-desc"></p>
+      </div>
+      <div class="map-area">
+        <h2>Mappa magica</h2>
+        <p class="map-note">I nodi della mappa possono essere mossi a piacimento dal saggio: la mappa si plasma secondo la sua volontà.</p>
+        <svg id="mappa-magica"></svg>
+      </div>
+    </div>
+  </div>
+
+  <button id="level2-btn">Vai al livello 2</button>
+  <div id="popup-fessura" class="hidden popup-fessura">
+    <div class="popup-content">
+      <p id="popup-text"></p>
+      <button id="popup-close">Chiudi</button>
+    </div>
+  </div>
+  <div id="popup-lose" class="hidden popup-fessura">
+    <div class="popup-content">
+      <p id="popup-lose-text"></p>
+      <button id="popup-lose-retry">Riprova</button>
+    </div>
+  </div>
+  <script>
+    // Funzione helper per direzioni opposte
+    const opposto = {
+      north: "south",
+      south: "north",
+      east: "west",
+      west: "east"
+    };
+
+    // Regole Livello 2 (notte)
+    const LIVELLO2_TARGET = 'stanza20';      // Sala della Perla
+    const LIVELLO2_MAX_DIST = 4;             // massimo 8 passi di distanza dalla stanza20 (BFS)
+
+    // Calcola lo spawn vicino alla porta di ingresso nella stanza di arrivo
+    function getSpawnPos(entrySide) {
+      const box = document.getElementById("room-box");
+      if (!box) return { x: 0, y: -80 };
+      const rect = box.getBoundingClientRect();
+      const w = rect.width;
+      const h = rect.height;
+      const m = 110; // margine dal bordo
+      switch (entrySide) {
+        case "north":
+          return { x: 0, y: -h / 2 + m / 2 };
+        case "south":
+          return { x: 0, y: h / 2 - m / 2 };
+        case "east":
+          return { x: w / 2 - m / 2, y: 0 };
+        case "west":
+          return { x: -w / 2 + m / 2, y: 0 };
+        case "tunnel":
+          // tunnel nel tuo layout è in basso al centro: spawn poco sopra il bordo inferiore
+          return { x: 0, y: h / 2 - m * 1.9 };
+        default:
+          return { x: 0, y: -120 };
+      }
+    }
+
+    // Definizione iniziale del grafo (senza proprietà "oggetti" in nessuna stanza)
+    const grafo = {
+      "stanza1": { descrizione: "Atrio del Castello, ampio e solenne, dove il saggio inizia il suo viaggio. Le torce danzano sulle pareti, e da qui si diramano i corridoi verso l’ignoto.", collegamenti: [{ direzione: "east", destinazione: "stanza2" }, { direzione: "south", destinazione: "stanza3" }, { direzione: "west", destinazione: "stanza4" }, { direzione: "north", destinazione: "stanza7" }] },
+      "stanza2": { descrizione: "Sala dei Cavalieri, armature antiche e stendardi impolverati. Sul tavolo, un elmo ribaltato contiene un piccolo lupino essiccato: forse un segno.", collegamenti: [{ direzione: "south", destinazione: "stanza5" }, { direzione: "west", destinazione: "stanza1" }, { direzione: "tunnel", destinazione: "stanza10" }] },
+      "stanza3": { descrizione: "Corridoio del Fuoco, lungo corridoio di pietra illuminato da fiaccole tremolanti. Sulle mura, incisioni che ricordano mappe o antichi percorsi.", collegamenti: [{ direzione: "south", destinazione: "stanza6" }, { direzione: "east", destinazione: "stanza5" }, { direzione: "west", destinazione: "stanza4" }, { direzione: "tunnel", destinazione: "stanza19" }] },
+      "stanza4": { descrizione: "Stanza del Sole, il pavimento riflette una luce calda e dorata. Senti un lieve canto provenire da un passaggio nascosto nel muro.", collegamenti: [{ direzione: "east", destinazione: "stanza1" }, { direzione: "tunnel", destinazione: "stanza12" }] },
+      "stanza5": { descrizione: "Sala dei Funghi, l’umidità riempie l’aria, e tra le radici spunta un piccolo sacchetto con un lupino fresco: il richiamo perfetto per il piccione.", collegamenti: [{ direzione: "north", destinazione: "stanza2" }, { direzione: "east", destinazione: "stanza10" }] },
+      "stanza6": { descrizione: "Corridoio delle Candele, centinaia di candele tremolano sulle pareti. Ogni fiamma sembra accendersi al tuo passaggio, come a mostrarti la via.", collegamenti: [{ direzione: "north", destinazione: "stanza3" }, { direzione: "south", destinazione: "stanza9" }] },
+      "stanza7": {
+        descrizione: "Terrazza del Vento, il vento porta con sé un fruscio di ali lontane. Guardando verso la foresta, scorgi una figura che si muove nell’ombra.",
+        collegamenti: [
+          { direzione: "south", destinazione: "stanza1" },
+          { direzione: "west", destinazione: "stanza11" },
+          { direzione: "tunnel", destinazione: "stanza17" }
+        ]
+      },
+      "stanza8": { descrizione: "Sala delle Foglie, foglie secche coprono il pavimento. Una lanterna spezzata giace accanto a una finestra murata: un messaggio del passato.", collegamenti: [{ direzione: "south", destinazione: "stanza12" }, { direzione: "east", destinazione: "stanza14" }] },
+      "stanza9": { descrizione: "Sala delle Vecchie Noci, l’odore dolce e antico del legno riempie l’aria. Qui tutto tace, come se il castello stesso trattenesse il respiro.", collegamenti: [] },
+      "stanza10": { descrizione: "Corridoio dei Quadri, ritratti dei nobili osservano il saggio mentre passa. Gli occhi sembrano seguire ogni suo movimento.", collegamenti: [{ direzione: "west", destinazione: "stanza5" }, { direzione: "south", destinazione: "stanza14" }] },
+      "stanza11": {
+        descrizione: "Sala degli Specchi, riflessi infiniti confondono il senso dello spazio. Tra le cornici d’argento brilla una piccola gemma dimenticata.",
+        collegamenti: [
+          { direzione: "east", destinazione: "stanza7" },
+          { direzione: "south", destinazione: "stanza15" }
+        ]
+      },
+      "stanza12": { descrizione: "Piccola Biblioteca, gli scaffali traboccano di libri consunti. Un tomo sigillato reca un simbolo a forma di chiave dorata.", collegamenti: [{ direzione: "north", destinazione: "stanza8" }] },
+      "stanza13": { descrizione: "Atrio Fantasia, le pareti sembrano vive, cambiano colore a ogni passo. Si ode un lieve bisbiglio che invita a proseguire verso sud.", collegamenti: [{ direzione: "north", destinazione: "stanza9" }, { direzione: "south", destinazione: "stanza17" }, { direzione: "east", destinazione: "stanza14" }] },
+      "stanza14": { descrizione: "Sala degli Astri, il soffitto brilla di funghi bioluminescenti. Ogni luce forma una costellazione che ricorda il disegno di un piccione in volo.", collegamenti: [{ direzione: "north", destinazione: "stanza10" }, { direzione: "south", destinazione: "stanza17" }] },
+      "stanza15": { descrizione: "Balcone delle Statue, da qui il castello domina la valle. Statue di pietra sorvegliano in silenzio; una di loro tiene in mano una piuma scolpita.", collegamenti: [] },
+      "stanza16": { descrizione: "Sala Giravolta, passaggi stretti e curve improvvise. Ogni angolo nasconde un’eco che ti riporta alla tua ultima scelta.", collegamenti: [{ direzione: "east", destinazione: "stanza19" }, { direzione: "west", destinazione: "stanza14" }] },
+      "stanza17": { descrizione: "Sala del Canto, le pareti vibrano di una melodia leggera. Sul pavimento giace una vera piuma — bianca, sottile, immacolata.", collegamenti: [{ direzione: "north", destinazione: "stanza14" }, { direzione: "east", destinazione: "stanza18" }] },
+      "stanza18": { descrizione: "Stanza dei Rami, le crepe sui muri sono coperte da disegni di alberi intrecciati. Qualcuno ha inciso parole ormai indecifrabili.", collegamenti: [] },
+      "stanza19": { descrizione: "Sala delle Caramelle, profumo dolce si libera nell'aria. In un angolo, minuscole briciole di zucchero formano una freccia verso est.", collegamenti: [{ direzione: "east", destinazione: "stanza20" }] },
+      "stanza20": { descrizione: "Sala della Perla, una stanza silenziosa e priva di finestre. Solo una piccola fessura nel muro lascia filtrare la luce, è l’unico passaggio per il piccione viaggiatore. Qui il saggio Edsger dovrà deporre il lupino e attendere la pergamena", collegamenti: [] }
+    };
+
+    // Costruisci collegamenti bidirezionali automatici
+    function costruisciCollegamentiBidirezionali(grafo) {
+      for (let [id, stanza] of Object.entries(grafo)) {
+        // Mantieni solo una stanza per direzione
+        const direzioniUniche = {};
+        stanza.collegamenti = stanza.collegamenti.filter(col => {
+          if (!direzioniUniche[col.direzione]) {
+            direzioniUniche[col.direzione] = true;
+            return true;
+          }
+          return false;
+        });
+        stanza.collegamenti.forEach(col => {
+          const inversa = col.direzione === "tunnel" ? "tunnel" : opposto[col.direzione];
+          const destinazione = grafo[col.destinazione];
+          if (!destinazione.collegamenti.some(c => c.destinazione === id)) {
+            destinazione.collegamenti.push({ direzione: inversa, destinazione: id });
+          }
+        });
+      }
+    }
+
+    costruisciCollegamentiBidirezionali(grafo);
+
+    // --- OGGETTI DI GIOCO (zaino) ---
+    const OGGETTI = [
+      { id: 'lupino',  nome: 'Lupino',   emoji: '🫘', stanza: 'stanza5'  },
+      { id: 'chiave',  nome: 'Chiave',   emoji: '🗝️', stanza: 'stanza12' },
+      { id: 'gemma',   nome: 'Gemma',    emoji: '💎', stanza: 'stanza11' },
+      { id: 'piuma',   nome: 'Piuma',    emoji: '🪶', stanza: 'stanza17' }
+    ];
+    const NUM_OGGETTI = OGGETTI.length;
+    const OGGETTO_PER_STANZA = Object.fromEntries(OGGETTI.map(o => [o.stanza, o]));
+    let zaino = new Set();
+
+    function getItemInRoom(roomId) {
+      const o = OGGETTO_PER_STANZA[roomId];
+      if (!o) return null;
+      return zaino.has(o.id) ? null : o;
+    }
+
+    function aggiornaZainoUI() {
+      const bagBtn = document.getElementById('bag-btn');
+      const bagPanel = document.getElementById('bag-panel');
+      if (!bagBtn || !bagPanel) return;
+      bagBtn.textContent = `Zaino (${zaino.size}/${NUM_OGGETTI})`;
+      const icons = OGGETTI.map(o => {
+        const has = zaino.has(o.id);
+        return has
+          ? `<span class="bag-icon" title="${o.nome}">${o.emoji}</span>`
+          : `<span class="bag-missing" title="${o.nome}">•</span>`; // puntino come placeholder
+      }).join('');
+      bagPanel.innerHTML = icons;
+    }
+
+    function toggleBagPanel() {
+      const panel = document.getElementById('bag-panel');
+      if (!panel) return;
+      panel.classList.toggle('hidden');
+    }
+
+    // --- Oggetto visibile dentro la stanza (blink + posizione casuale) ---
+    window.roomItemPos = window.roomItemPos || {};
+
+    function computeRandomItemOffset() {
+      const box = document.getElementById('room-box');
+      const rect = box.getBoundingClientRect();
+      const margin = 70; // evita i bordi e le porte
+      const minX = -rect.width/2  + margin;
+      const maxX =  rect.width/2  - margin;
+      const minY = -rect.height/2 + margin;
+      const maxY =  rect.height/2  - margin;
+      const x = Math.random() * (maxX - minX) + minX;
+      const y = Math.random() * (maxY - minY) + minY;
+      return { x, y };
+    }
+
+    function renderRoomItem() {
+      // rimuovi eventuale oggetto/placeholder precedente
+      const prev = document.getElementById('room-item');
+      if (prev) prev.remove();
+
+      // Aggiungi sempre la finestrella nella Sala della Perla
+      if (nodoCorrente === 'stanza20') {
+        const box = document.getElementById('room-box');
+        // Rimuovi eventuali finestrelle precedenti
+        const oldWindow = box.querySelector('.room-window');
+        if (oldWindow) oldWindow.remove();
+        // Rimuovi eventuale pergamena precedente
+        const oldScroll = box.querySelector('.room-scroll');
+        if (oldScroll) oldScroll.remove();
+
+        const windowEl = document.createElement('div');
+        windowEl.className = 'room-window';
+        windowEl.textContent = '🕳️'; // buco
+        windowEl.style.position = 'absolute';
+        windowEl.style.fontSize = '48px';
+        windowEl.style.top = '20%';   // centrata verticalmente
+        windowEl.style.right = '-5.5%';  // adiacente al muro destro
+        windowEl.style.transform = 'rotate(90deg)';
+        windowEl.style.opacity = '0.9';
+        windowEl.style.filter = 'drop-shadow(2px 2px 3px rgba(0,0,0,0.4))';
+        // Accessibilità per la finestrella
+        windowEl.setAttribute('role', 'button');
+        windowEl.setAttribute('tabindex', '0');
+        windowEl.setAttribute('aria-label', 'Fessura nel muro');
+        // Listener click/tastiera accessibile sulla finestrella
+        const triggerPopup = () => {
+          const popup = document.getElementById('popup-fessura');
+          const popupText = document.getElementById('popup-text');
+          const popupClose = document.getElementById('popup-close');
+          const inDark = document.body.classList.contains('dark-mode');
+
+          if (inDark) {
+            // Livello 2: messaggio di vittoria
+            popupText.textContent = 'Il saggio Edsger ha raggiunto la sala della perla senza farsi scoprire e ha trovato la pergamena! Il regno è salvo!';
+            if (typeof setDarkMode === 'function') setDarkMode(true); // resta in dark
+          } else {
+            // Livello 1: messaggio originale e attiva il bottone per passare al Livello 2
+            popupText.textContent = `Hai trovato la fessura! Numero di stanze attraversate: ${passi}`;
+            const levelBtn = document.getElementById('level2-btn');
+            if (levelBtn) {
+              levelBtn.style.display = 'block';
+              levelBtn.textContent = 'Vai al livello 2';
+              levelBtn.style.pointerEvents = 'auto';
+              levelBtn.style.cursor = 'pointer';
+              levelBtn.style.opacity = '1';
+            }
+          }
+
+          popup.classList.remove('hidden');
+          popupClose.onclick = () => popup.classList.add('hidden');
+        };
+
+        if (!document.body.classList.contains('dark-mode')) {
+          windowEl.addEventListener('click', (e) => { e.stopPropagation(); triggerPopup(); });
+          windowEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); triggerPopup(); }
+          });
+        }
+        box.appendChild(windowEl);
+
+        // Inserisci la pergamena decorativa SOLO in dark mode (Livello 2)
+        if (document.body.classList.contains('dark-mode')) {
+          const scrollEl = document.createElement('div');
+          scrollEl.className = 'room-scroll';
+          scrollEl.textContent = '📜';
+          scrollEl.title = 'Pergamena';
+          // accessibilità
+          scrollEl.setAttribute('role', 'button');
+          scrollEl.setAttribute('tabindex', '0');
+          scrollEl.setAttribute('aria-label', 'Pergamena');
+          // posizionamento vicino alla fessura (muro destro), leggermente più in basso e verso l'interno
+          scrollEl.style.top = '28%';
+          scrollEl.style.right = '6%';
+          scrollEl.style.transform = 'rotate(-10deg)';
+          // listener: in Livello 2 la pergamena mostra il popup di vittoria
+          scrollEl.addEventListener('click', (e) => { e.stopPropagation(); triggerPopup(); });
+          scrollEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); triggerPopup(); }
+          });
+          box.appendChild(scrollEl);
+        }
+      } else {
+        // Rimuovi la finestrella se si esce dalla stanza
+        const box = document.getElementById('room-box');
+        const oldWindow = box.querySelector('.room-window');
+        if (oldWindow) oldWindow.remove();
+        // Rimuovi anche la pergamena se presente
+        const oldScroll2 = box.querySelector('.room-scroll');
+        if (oldScroll2) oldScroll2.remove();
+      }
+
+      // Se in questa stanza non esiste alcun oggetto previsto, non mostrare nulla
+      const meta = OGGETTO_PER_STANZA[nodoCorrente];
+      if (!meta) return;
+
+      // Se già raccolto in passato, non mostrare nulla (nessun "Raccolto")
+      if (zaino.has(meta.id)) return;
+
+      // Posizione casuale per stanza, persistente finché non raccogli
+      if (!window.roomItemPos[nodoCorrente]) {
+        window.roomItemPos[nodoCorrente] = computeRandomItemOffset();
+      }
+      const { x, y } = window.roomItemPos[nodoCorrente];
+
+      const box = document.getElementById('room-box');
+      const el = document.createElement('div');
+      el.id = 'room-item';
+      el.className = 'room-item';
+      el.textContent = meta.emoji;
+      el.style.setProperty('--tx', `calc(-50% + ${x}px)`);
+      el.style.setProperty('--ty', `calc(-50% + ${y}px)`);
+      el.title = `${meta.nome}`;
+
+      // click diretto sull'oggetto nella stanza: raccogli e mostra "Raccolto" per 5s
+      el.addEventListener('click', () => {
+        zaino.add(meta.id);
+        el.classList.add('collected');
+        el.textContent = 'Raccolto';
+        el.style.animation = 'none';
+        aggiornaZainoUI();
+        // dopo 5 secondi sparisce
+        setTimeout(() => { if (el && el.parentNode) el.parentNode.removeChild(el); }, 700);
+      });
+
+      box.appendChild(el);
+    }
+
+    function showCollectedPlaceholder() {
+      // rimuovi eventuale oggetto/placeholder precedente
+      const prev = document.getElementById('room-item');
+      if (prev) prev.remove();
+
+      const meta = OGGETTO_PER_STANZA[nodoCorrente];
+      if (!meta) return;
+
+      // usa la stessa posizione random già assegnata (o generane una se manca)
+      if (!window.roomItemPos[nodoCorrente]) {
+        window.roomItemPos[nodoCorrente] = computeRandomItemOffset();
+      }
+      const { x, y } = window.roomItemPos[nodoCorrente];
+
+      const box = document.getElementById('room-box');
+      const el = document.createElement('div');
+      el.id = 'room-item';
+      el.className = 'room-item collected';
+      el.textContent = 'Raccolto';
+      el.style.setProperty('--tx', `calc(-50% + ${x}px)`);
+      el.style.setProperty('--ty', `calc(-50% + ${y}px)`);
+      el.style.animation = 'none';
+      box.appendChild(el);
+      setTimeout(() => { if (el && el.parentNode) el.parentNode.removeChild(el); }, 5000);
+    }
+
+    // Calcola le distanze BFS dall'Atrio
+    function calcolaDistanzeDaAtrio() {
+      const distanze = {};
+      const queue = ["stanza1"];
+      distanze["stanza1"] = 0;
+      while (queue.length > 0) {
+        const curr = queue.shift();
+        grafo[curr].collegamenti.forEach(col => {
+          if (!(col.destinazione in distanze)) {
+            distanze[col.destinazione] = distanze[curr] + 1;
+            queue.push(col.destinazione);
+          }
+        });
+      }
+      return distanze;
+    }
+
+    // Calcola le distanze BFS da una stanza generica
+    function calcolaDistanzeDa(startId) {
+      const dist = {};
+      const q = [startId];
+      dist[startId] = 0;
+      while (q.length) {
+        const u = q.shift();
+        (grafo[u]?.collegamenti || []).forEach(col => {
+          if (!(col.destinazione in dist)) {
+            dist[col.destinazione] = dist[u] + 1;
+            q.push(col.destinazione);
+          }
+        });
+      }
+      return dist; // nodi non raggiunti: dist[nodo] === undefined
+    }
+
+    // Calcola le distanze BFS limitandosi ai nodi "visibili" (già visitati)
+    function calcolaDistanzeVisibiliDa(startId, visSet) {
+      const dist = {};
+      if (!visSet || !visSet.has(startId)) {
+        // se lo start non è ancora visibile, non possiamo ragionare
+        return dist;
+      }
+      const q = [startId];
+      dist[startId] = 0;
+      while (q.length) {
+        const u = q.shift();
+        (grafo[u]?.collegamenti || []).forEach(col => {
+          const v = col.destinazione;
+          if (!visSet.has(v)) return; // ignora nodi non ancora visibili
+          if (!(v in dist)) {
+            dist[v] = dist[u] + 1;
+            q.push(v);
+          }
+        });
+      }
+      return dist;
+    }
+
+    function mostraSconfittaLivello2() {
+      const popup = document.getElementById('popup-lose');
+      const text = document.getElementById('popup-lose-text');
+      const btn = document.getElementById('popup-lose-retry');
+      if (!popup || !text || !btn) return;
+      text.textContent = 'Ti sei allontanato troppo dalla Sala della Perla. Le guardie ti hanno scoperto!';
+      popup.classList.remove('hidden');
+      btn.onclick = () => {
+        popup.classList.add('hidden');
+        resetGame(true); // riparti dal Livello 2, atrio, mappa vuota
+      };
+    }
+
+    disegnaMappaBase();
+
+
+let nodoCorrente = "stanza1";
+let passi = 0;
+let cammino = [nodoCorrente];
+let percorso = [nodoCorrente]; // timeline completa dei movimenti (con duplicati)
+
+function resetGame(keepDark = false) {
+  // Reset stato di gioco
+  nodoCorrente = "stanza1";
+  passi = 0;
+  cammino = [nodoCorrente];
+  percorso = [nodoCorrente];
+  document.getElementById("passi").textContent = passi;
+
+  // Reset posizioni mappa
+  window.manualNodePos = {};
+  window.layoutPos = {};
+
+  // Reset posizioni oggetti nella stanza
+  window.roomItemPos = {};
+
+  // Reset zaino
+  zaino = new Set();
+  aggiornaZainoUI();
+  const panel = document.getElementById('bag-panel');
+  if (panel) panel.classList.add('hidden');
+
+  // Reset omino
+  ominoPos = { x: 0, y: -80 };
+  const omino = document.getElementById("omino");
+  omino.style.transform = `translate(calc(-50% + ${ominoPos.x}px), calc(-50% + ${ominoPos.y}px))`;
+  spawnGraceUntil = Date.now() + 500;
+
+  // Tema (Livello 2 = dark)
+  if (typeof setDarkMode === 'function') setDarkMode(!!keepDark);
+
+  // Ricrea mappa e UI
+  disegnaMappaBase();
+  aggiornaStanza();
+  aggiornaMappa();
+
+  // Stato del bottone livello
+  const levelBtn = document.getElementById('level2-btn');
+  if (levelBtn) {
+    levelBtn.style.display = 'block';
+    if (keepDark) {
+      levelBtn.textContent = 'Livello 2';
+      levelBtn.style.pointerEvents = 'none';
+      levelBtn.style.cursor = 'default';
+      levelBtn.style.opacity = '1';
+    } else {
+      levelBtn.textContent = 'Livello 1';
+      levelBtn.style.pointerEvents = 'none';
+      levelBtn.style.cursor = 'default';
+      levelBtn.style.opacity = '0.6';
+    }
+  }
+}
+
+const backBtn = document.getElementById("back-btn");
+backBtn.addEventListener("click", () => {
+  const inDark = document.body.classList.contains('dark-mode');
+  resetGame(inDark);
+});
+
+const bagBtn = document.getElementById('bag-btn');
+if (bagBtn) {
+  bagBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleBagPanel(); });
+}
+// chiudi pannello zaino cliccando fuori
+document.addEventListener('click', (e) => {
+  const panel = document.getElementById('bag-panel');
+  const btn = document.getElementById('bag-btn');
+  if (!panel || panel.classList.contains('hidden')) return;
+  if (!panel.contains(e.target) && !btn.contains(e.target)) {
+    panel.classList.add('hidden');
+  }
+});
+
+// --- Modalità Dislessia: toggle font ad alta leggibilità ---
+const DYSLEXIA_KEY = 'dyslexia-mode';
+function applyDyslexiaMode(on) {
+  document.body.classList.toggle('dyslexia-mode', on);
+  const b = document.getElementById('dyslexia-btn');
+  if (b) {
+    b.textContent = on ? 'Accessibilità ON' : 'Accessibilità';
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+}
+const dysBtn = document.getElementById('dyslexia-btn');
+if (dysBtn) {
+  dysBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const on = !document.body.classList.contains('dyslexia-mode');
+    applyDyslexiaMode(on);
+    try { localStorage.setItem(DYSLEXIA_KEY, on ? '1' : '0'); } catch(_) {}
+  });
+}
+
+try { applyDyslexiaMode(localStorage.getItem(DYSLEXIA_KEY) === '1'); } catch(_) { applyDyslexiaMode(false); }
+
+  // --- Dark Mode controller ---
+  function setDarkMode(on) {
+    document.body.classList.toggle('dark-mode', on);
+    // Adjust SVG colors to match theme
+    const texts = document.querySelectorAll('#mappa-magica text');
+    texts.forEach(t => t.setAttribute('fill', on ? '#eaeaea' : '#333'));
+    const edges = document.querySelectorAll('#mappa-magica path.edge');
+    edges.forEach(e => e.setAttribute('stroke', on ? '#aaa' : '#666'));
+    const circles = document.querySelectorAll('#mappa-magica circle');
+    circles.forEach(c => {
+      const isCurrent = c.getAttribute('data-current') === '1';
+      if (!isCurrent) {
+        c.style.stroke = '';
+        c.setAttribute('stroke', on ? '#ccc' : '#333');
+      }
+    });
+  }
+
+    function nomeStanza(nodoId) {
+      if (grafo[nodoId] && grafo[nodoId].descrizione) {
+        return grafo[nodoId].descrizione.split(',')[0].split('\\n')[0].trim();
+      }
+      return nodoId;
+    }
+
+    // Disegna la mappa base: tutti i nodi e archi, inizialmente invisibili
+    function disegnaMappaBase() {
+      const mappaEl = document.getElementById("mappa-magica");
+      mappaEl.innerHTML = "";
+      mappaEl.setAttribute("viewBox", "0 0 1000 600");
+      mappaEl.setAttribute("preserveAspectRatio", "xMidYMid meet");
+      mappaEl.style.display = "block";
+
+      // Crea un layer (g) per poter scalare/spostare la mappa dinamicamente
+      const layer = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      layer.setAttribute("id", "map-layer");
+      mappaEl.appendChild(layer);
+
+      // Mappa emoji per stanze
+      const emojiMap = {
+        "stanza1": "🏰",
+        "stanza2": "⚔️",
+        "stanza3": "🔥",
+        "stanza4": "🌞",
+        "stanza5": "🍄",
+        "stanza6": "🕯️",
+        "stanza7": "💨",
+        "stanza8": "🍂",
+        "stanza9": "🌰",
+        "stanza10": "🖼️",
+        "stanza11": "🪞",
+        "stanza12": "📚",
+        "stanza13": "🔮",
+        "stanza14": "✨",
+        "stanza15": "🗿",
+        "stanza16": "🌀",
+        "stanza17": "🎵",
+        "stanza18": "🪵",
+        "stanza19": "🍬",
+        "stanza20": "🦪"
+      };
+
+      // posizionamento: Atrio (stanza1) al centro, altre stanze in cerchio attorno
+      const posizioni = {};
+      const centerX = 500, centerY = 150;
+      const radius = 130;
+      const stanze = Object.keys(grafo);
+
+      stanze.forEach((stanza, i) => {
+        if (stanza === "stanza1") {
+          posizioni[stanza] = { x: centerX, y: centerY }; // Atrio al centro
+        } else {
+          const angle = (i / (stanze.length - 1)) * 2 * Math.PI;
+          const x = centerX + radius * Math.cos(angle);
+          const y = centerY + radius * Math.sin(angle);
+          posizioni[stanza] = { x, y };
+        }
+      });
+
+      // disegna tutti gli archi (senza duplicati direzionali)
+      const archiCreati = new Set();
+      for (let [id, stanza] of Object.entries(grafo)) {
+        const { x, y } = posizioni[id];
+        stanza.collegamenti.forEach(col => {
+          const dest = posizioni[col.destinazione];
+          if (!dest) return;
+          // Normalizza la chiave (ordine alfabetico)
+          const key = [id, col.destinazione].sort().join("-");
+          if (archiCreati.has(key)) return;
+          archiCreati.add(key);
+
+          const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+          path.setAttribute("id", `edge-${key}`);
+          path.setAttribute("class", "edge");
+          path.setAttribute("d", `M ${x} ${y} L ${dest.x} ${dest.y}`);
+          path.setAttribute("fill", "none");
+          path.setAttribute("stroke", "#666");
+          path.setAttribute("stroke-linecap", "round");
+          path.setAttribute("stroke-width", "3");
+          path.setAttribute("opacity", "0");
+          path.setAttribute("vector-effect", "non-scaling-stroke");
+          layer.appendChild(path);
+        });
+      }
+
+      // disegna tutti i nodi
+      for (let [id, stanza] of Object.entries(grafo)) {
+        const { x, y } = posizioni[id];
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("id", `node-${id}`);
+        circle.setAttribute("cx", x);
+        circle.setAttribute("cy", y);
+        circle.setAttribute("r", 34);
+        circle.setAttribute("fill", "none");              // sfondo trasparente
+        circle.setAttribute("stroke", "#333");            // bordo nero leggero
+        circle.setAttribute("stroke-width", "2");
+        circle.setAttribute("opacity", "0");
+        circle.setAttribute("vector-effect", "non-scaling-stroke");
+        circle.classList.add('draggable');
+        circle.addEventListener('pointerdown', (e) => startDragNode(e, id));
+        layer.appendChild(circle);
+
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", x);
+        text.setAttribute("y", y + 8);
+        text.setAttribute("text-anchor", "middle");
+        text.setAttribute("font-size", "40");
+        text.setAttribute("fill", "#333");
+        text.textContent = emojiMap[id] || "❓";
+        text.setAttribute("opacity", "0");
+        text.setAttribute("id", `label-${id}`);
+        text.classList.add('draggable');
+        text.addEventListener('pointerdown', (e) => startDragNode(e, id));
+        layer.appendChild(text);
+      }
+
+      window.posizioniMappa = posizioni;
+
+      // Mostra subito il nodo iniziale (Atrio)
+      const nodoIniziale = document.getElementById("node-stanza1");
+      const labelIniziale = document.getElementById("label-stanza1");
+      if (nodoIniziale && labelIniziale) {
+        nodoIniziale.setAttribute('opacity', '1');
+        labelIniziale.setAttribute('opacity', '1');
+        nodoIniziale.setAttribute('fill', 'none');
+        nodoIniziale.setAttribute('data-current', '1');
+        nodoIniziale.style.stroke = '#FFD700';
+        nodoIniziale.setAttribute('stroke-width', '3');
+      }
+    }
+
+    // Calcola gli estremi di un arco che tocca il bordo dei nodi (cerchi) invece dei centri
+    function edgeOnPerimeters(id1, id2, pos) {
+      const n1 = document.getElementById(`node-${id1}`);
+      const n2 = document.getElementById(`node-${id2}`);
+      if (!n1 || !n2 || !pos[id1] || !pos[id2]) return null;
+      const x1 = pos[id1].x, y1 = pos[id1].y;
+      const x2 = pos[id2].x, y2 = pos[id2].y;
+      let dx = x2 - x1, dy = y2 - y1;
+      const d = Math.hypot(dx, dy) || 1;
+      const r1 = parseFloat(n1.getAttribute('r') || '18');
+      const r2 = parseFloat(n2.getAttribute('r') || '18');
+      const sw1 = parseFloat(n1.getAttribute('stroke-width') || '2');
+      const sw2 = parseFloat(n2.getAttribute('stroke-width') || '2');
+      const t1 = r1 + (sw1 / 2);
+      const t2 = r2 + (sw2 / 2);
+      const ux = dx / d, uy = dy / d;
+      return {
+        x1: x1 + ux * t1,
+        y1: y1 + uy * t1,
+        x2: x2 - ux * t2,
+        y2: y2 - uy * t2,
+      };
+    }
+
+    // Restituisce la stringa 'd' per un percorso curvo tra due nodi, con offset per ridurre sovrapposizioni
+    function curvedPathBetween(da, a, pos, offsetPx) {
+      const ends = edgeOnPerimeters(da, a, pos);
+      if (!ends) return '';
+      const dx = ends.x2 - ends.x1;
+      const dy = ends.y2 - ends.y1;
+      const len = Math.hypot(dx, dy) || 1;
+      // normale perpendicolare verso sinistra
+      const nx = -dy / len;
+      const ny = dx / len;
+      const mx = (ends.x1 + ends.x2) / 2;
+      const my = (ends.y1 + ends.y2) / 2;
+      const cx = mx + nx * offsetPx;
+      const cy = my + ny * offsetPx;
+      return `M ${ends.x1} ${ends.y1} Q ${cx} ${cy} ${ends.x2} ${ends.y2}`;
+    }
+
+    // --- Drag manuale dei nodi della mappa ---
+let draggingNode = null;
+let dragOffset = { x: 0, y: 0 };
+window.manualNodePos = window.manualNodePos || {};
+
+function svgLayerPoint(evt) {
+  const svg   = document.getElementById('mappa-magica');
+  const layer = document.getElementById('map-layer');
+  const pt = svg.createSVGPoint();
+  pt.x = evt.clientX; pt.y = evt.clientY;
+  const inv = layer.getScreenCTM().inverse();
+  return pt.matrixTransform(inv);
+}
+
+function startDragNode(evt, id) {
+  evt.preventDefault();
+  const node = document.getElementById(`node-${id}`);
+  if (!node || node.getAttribute('opacity') === '0') {
+    return; // impedisce di cliccare/trascinare nodi invisibili
+  }
+  const p = svgLayerPoint(evt);
+  const current = (window.layoutPos && window.layoutPos[id]) ? window.layoutPos[id] : { x: p.x, y: p.y };
+  dragOffset.x = current.x - p.x;
+  dragOffset.y = current.y - p.y;
+  draggingNode = id;
+  const c = document.getElementById(`node-${id}`);
+  const t = document.getElementById(`label-${id}`);
+  if (c) c.classList.add('dragging');
+  if (t) t.classList.add('dragging');
+}
+
+function onPointerMove(evt) {
+  if (!draggingNode) return;
+  const p = svgLayerPoint(evt);
+  const x = p.x + dragOffset.x;
+  const y = p.y + dragOffset.y;
+
+  // salva override manuale
+  window.manualNodePos[draggingNode] = { x, y };
+  window.layoutPos = window.layoutPos || {};
+  window.layoutPos[draggingNode] = { x, y };
+
+  // aggiorna subito nodo + etichetta
+  const node  = document.getElementById(`node-${draggingNode}`);
+  const label = document.getElementById(`label-${draggingNode}`);
+  if (node)  { node.setAttribute('cx', x); node.setAttribute('cy', y); }
+  if (label) { label.setAttribute('x', x); label.setAttribute('y', y + 8); }
+
+  // aggiorna gli archi del percorso live
+  for (let i = 0; i < percorso.length - 1; i++) {
+    const da = percorso[i], a = percorso[i + 1];
+    const edge = document.getElementById(`edge-${[da,a].sort().join('-')}`);
+    if (edge) {
+      const d = curvedPathBetween(da, a, window.layoutPos, 0);
+      if (d) edge.setAttribute('d', d);
+    }
+  }
+}
+
+function endDrag() {
+  if (!draggingNode) return;
+  const c = document.getElementById(`node-${draggingNode}`);
+  const t = document.getElementById(`label-${draggingNode}`);
+  if (c) c.classList.remove('dragging');
+  if (t) t.classList.remove('dragging');
+  draggingNode = null;
+  aggiornaMappa(); // consolida con override manuali
+}
+
+document.addEventListener('pointermove', onPointerMove);
+document.addEventListener('pointerup',   endDrag);
+    
+
+    // Scala e centra il layer della mappa in base ai nodi VISITATI
+    function fitMapToView(pos) {
+      const svg = document.getElementById('mappa-magica');
+      const layer = document.getElementById('map-layer');
+      if (!svg || !layer) return;
+      const viewW = 1000, viewH = 600;
+      const marginX = 10, marginTop = 10, marginBottom = 10;
+      const NODE_PAD = 48; // padding intorno a ciascun nodo per evitare tagli (raggio + emoji)
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      Object.values(pos).forEach(p => {
+        if (!p) return;
+        // considera il bordo del cerchio + l'emoji per non tagliare i nodi
+        if (p.x - NODE_PAD < minX) minX = p.x - NODE_PAD;
+        if (p.y - NODE_PAD < minY) minY = p.y - NODE_PAD;
+        if (p.x + NODE_PAD > maxX) maxX = p.x + NODE_PAD;
+        if (p.y + NODE_PAD > maxY) maxY = p.y + NODE_PAD;
+      });
+      if (!isFinite(minX) || !isFinite(minY) || !isFinite(maxX) || !isFinite(maxY)) return;
+      const w = Math.max(1, maxX - minX);
+      const h = Math.max(1, maxY - minY);
+      const sRaw = Math.min((viewW - 2*marginX) / w, (viewH - (marginTop + marginBottom)) / h);
+      const s = Math.min(1, sRaw); // non zoomare oltre la dimensione base (solo zoom-out)
+      const tx = marginX - minX * s;
+      const ty = marginTop - minY * s;
+      layer.setAttribute('transform', `translate(${tx},${ty}) scale(${s})`);
+    }
+
+    // Aggiorna la visibilità dei nodi e archi in base al cammino e colora il nodo corrente, con layout radiale dinamico e transizioni fluide
+    function aggiornaMappa() {
+      const mappaEl = document.getElementById("mappa-magica");
+      if (!mappaEl) return;
+
+      if (percorso.length <= 1) {
+        // Mostra la mappa con il solo nodo dell'Atrio evidenziato
+        mappaEl.style.display = "block";
+        const nAtrio = document.getElementById("node-stanza1");
+        const lAtrio = document.getElementById("label-stanza1");
+        if (nAtrio) {
+            nAtrio.setAttribute('opacity', '1');
+            nAtrio.setAttribute('fill', 'none');
+            nAtrio.setAttribute('data-current', '1');
+            nAtrio.style.stroke = '#FFD700';
+            nAtrio.setAttribute('stroke-width', '3');
+        }
+        if (lAtrio) lAtrio.setAttribute("opacity", "1");
+        return;
+        }
+      mappaEl.style.display = "block";
+
+      // --- Layout manual-first: niente riequilibrio automatico ---
+      const visitati = new Set(percorso);
+
+      // Ordine reale di esplorazione senza duplicati
+      const order = [];
+      const seen = new Set();
+      for (const id of percorso) {
+        if (!seen.has(id)) { order.push(id); seen.add(id); }
+      }
+
+      // Mantieni posizioni esistenti; non spostare nulla automaticamente
+      let pos = Object.assign({}, window.layoutPos || {});
+
+      // Parametri di fallback (usati solo per nodi nuovi mai posizionati)
+      const baseY = 260;
+      const baseX = 40;
+      const spacingX = 120; // default lineare iniziale, non ribilancia
+
+      order.forEach((id, i) => {
+        if (window.manualNodePos && window.manualNodePos[id]) {
+          // Posizione dettata dall'utente
+          pos[id] = { x: window.manualNodePos[id].x, y: window.manualNodePos[id].y };
+        } else if (!(id in pos)) {
+          // Se non esiste ancora, usa una posizione iniziale stabile
+          const fallback = (window.posizioniMappa && window.posizioniMappa[id])
+            ? window.posizioniMappa[id]
+            : { x: baseX + i * spacingX, y: baseY };
+          pos[id] = { x: fallback.x, y: fallback.y };
+        }
+      });
+
+      // Salva le posizioni correnti senza ulteriori riequilibri
+      window.layoutPos = pos;
+
+      // (Niente corridoi, niente collision-fix: l'utente sposta i nodi a mano)
+
+      // --- Aggiorna posizione, colore e visibilità dei nodi ---
+      const dark = document.body.classList.contains('dark-mode');
+      Object.keys(grafo).forEach(id => {
+        const node = document.getElementById(`node-${id}`);
+        const label = document.getElementById(`label-${id}`);
+        if (node && pos[id]) {
+          node.setAttribute('opacity', '1');
+          if (label) label.setAttribute('opacity', '1');
+          node.setAttribute('fill', 'none');
+          if (id === nodoCorrente) {
+            node.setAttribute('data-current', '1');
+            node.style.stroke = '#FFD700';
+            node.setAttribute('stroke', '#FFD700');
+          } else {
+            node.removeAttribute('data-current');
+            node.style.stroke = '';
+            node.setAttribute('stroke', dark ? '#ccc' : '#333');
+          }
+          node.setAttribute('stroke-width', id === nodoCorrente ? '3' : '2');
+          node.setAttribute('cx', pos[id].x);
+          node.setAttribute('cy', pos[id].y);
+          if (label) {
+            label.setAttribute('x', pos[id].x);
+            label.setAttribute('y', pos[id].y + 8);
+            label.setAttribute('fill', dark ? '#eaeaea' : '#333');
+          }
+        }
+      });
+
+      // Reset opacità di tutti gli archi prima di ridisegnare quelli del percorso
+      document.querySelectorAll('#mappa-magica path.edge').forEach(p => p.setAttribute('opacity', '0'));
+
+      // --- Ridisegna archi del percorso con transizione ---
+      for (let i = 0; i < percorso.length - 1; i++) {
+        const da = percorso[i];
+        const a = percorso[i + 1];
+        const key = [da, a].sort().join("-");
+        const edge = document.getElementById(`edge-${key}`);
+        if (edge && pos[da] && pos[a]) {
+          edge.setAttribute("opacity", "1");
+          edge.setAttribute('stroke', dark ? '#aaa' : '#666');
+          const d = curvedPathBetween(da, a, pos, 0);
+          if (d) edge.setAttribute('d', d);
+        }
+      }
+
+      // Scala e centra la mappa in base ai nodi visitati
+      // console.log('Node offsets:', nodeOffset);
+      if (!draggingNode) fitMapToView(pos);
+    }
+
+    function aggiornaStanza() {
+      const titleEl = document.getElementById("stanza-title");
+      const infoTitleEl = document.getElementById("info-title");
+      const infoDescEl = document.getElementById("info-desc");
+      const dark = document.body.classList.contains('dark-mode');
+
+      if (titleEl) titleEl.textContent = nomeStanza(nodoCorrente);
+      if (infoTitleEl) infoTitleEl.textContent = nomeStanza(nodoCorrente);
+      if (infoDescEl) infoDescEl.textContent = grafo[nodoCorrente].descrizione;
+
+      // Sezione meta (azioni stanza): NESSUN bottone Raccogli; si usa l'emoji nella stanza
+      const roomInfo = document.querySelector('#right-pane .room-info');
+      let metaBox = document.getElementById('room-meta');
+      if (!metaBox) {
+        metaBox = document.createElement('div');
+        metaBox.id = 'room-meta';
+        metaBox.className = 'meta';
+        roomInfo.appendChild(metaBox);
+      }
+      // Lascia vuoto: la raccolta avviene cliccando l'emoji nella stanza
+      metaBox.innerHTML = '';
+
+      // Mostra (se presente) l'oggetto nella stanza, con blink e posizione casuale
+      renderRoomItem();
+
+      const doorsEl = document.getElementById("doors");
+
+      // Mostra sempre il tasto Ricomincia
+      const backBtn = document.getElementById("back-btn");
+      backBtn.style.display = "flex";
+
+      doorsEl.innerHTML = "";
+      const visitate = new Set(percorso);
+
+      grafo[nodoCorrente].collegamenti.forEach(col => {
+        const btn = document.createElement("button");
+        btn.classList.add("door", col.direzione);
+        const visited = visitate.has(col.destinazione);
+        if (col.direzione === "tunnel") {
+          // niente emoji, buco nero gestito dal CSS
+          btn.textContent = "";
+          btn.setAttribute("title", "Tunnel → " + nomeStanza(col.destinazione));        // tooltip utile
+          btn.setAttribute("aria-label", "Tunnel verso " + nomeStanza(col.destinazione)); // accessibilità
+          btn.style.backgroundColor = "";     // lascia che il CSS metta il gradiente
+          btn.style.borderColor = "transparent";
+          btn.style.position = "absolute";
+          btn.style.bottom = "20%";
+          btn.style.left = "50%";
+          btn.style.transform = "translateX(-50%)";
+        } else {
+          // porte normali: solo testo del nome stanza, nessuna icona
+          btn.style.backgroundColor = dark ? "var(--panel)" : "var(--parchment)";
+          btn.style.borderColor = visited ? "#FFD700" : (dark ? "var(--border)" : "#654321");
+          btn.textContent = "";
+          const lbl = document.createElement('span');
+          lbl.className = 'door-label';
+          const fullName = nomeStanza(col.destinazione);
+          if (col.direzione === 'east' || col.direzione === 'west') {
+            // Vai a capo dopo ogni parola solo per Est/Ovest
+            lbl.innerHTML = fullName.split(/\s+/).join('<br>');
+          } else {
+            lbl.textContent = fullName;
+          }
+          btn.appendChild(lbl);
+
+          // Rimuovi completamente i due lati paralleli al muro (interno + esterno)
+          switch (col.direzione) {
+            case 'north':
+            case 'south':
+              btn.style.borderTopColor = 'transparent';
+              btn.style.borderBottomColor = 'transparent';
+              break;
+            case 'east':
+            case 'west':
+              btn.style.borderTopColor = 'transparent';
+              btn.style.borderBottomColor = 'transparent';
+              break;
+          }
+        }
+        btn.addEventListener("click", () => {
+          const destinazione = col.destinazione;
+          const inDark = document.body.classList.contains('dark-mode');
+
+          // In Livello 2 (notte), perde se la profondità BFS dall'Atrio supera 4
+          if (inDark) {
+            // Considera solo la mappa VISIBILE finora (nodi toccati) + la destinazione (la porta è visibile)
+            const visSet = new Set(percorso);
+            visSet.add(nodoCorrente);
+            visSet.add(destinazione);
+            const distMap = calcolaDistanzeVisibiliDa('stanza1', visSet);
+            const distFromAtrio = distMap[destinazione];
+            if (distFromAtrio === undefined || distFromAtrio >= LIVELLO2_MAX_DIST) {
+              mostraSconfittaLivello2();
+              return; // non aggiornare lo stato né muovere l'omino
+            }
+          }
+
+          // Procedi con il movimento (valido)
+          const precedente = cammino[cammino.length - 2];
+          nodoCorrente = destinazione;
+          passi++;
+          if (!cammino.includes(nodoCorrente)) {
+            cammino.push(nodoCorrente);
+          }
+          percorso.push(nodoCorrente); // registra sempre il movimento nella timeline
+          document.getElementById("passi").textContent = passi;
+          // spawn vicino alla porta di ingresso nella nuova stanza
+          const entrySide = (col.direzione === "tunnel") ? "tunnel" : opposto[col.direzione];
+          ominoPos = getSpawnPos(entrySide);
+          const omino = document.getElementById("omino");
+          omino.style.transform = `translate(calc(-50% + ${ominoPos.x}px), calc(-50% + ${ominoPos.y}px))`;
+          spawnGraceUntil = Date.now() + 500; // evita retrigger immediato
+          aggiornaStanza();
+          aggiornaMappa();
+          aggiornaZainoUI();
+        });
+        doorsEl.appendChild(btn);
+      });
+      aggiornaMappa();
+    }
+
+    let ominoPos = { x: 0, y: -120 };
+    let spawnGraceUntil = 0; // finestra di grazia per evitare collisione immediata
+    const moveSpeed = 2;
+    const pressedKeys = {};
+    let isTransitioning = false; // prevent multiple triggers during fade
+
+    document.addEventListener("keydown", (e) => {
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+        pressedKeys[e.key] = true;
+        e.preventDefault();
+      }
+    });
+
+    document.addEventListener("keyup", (e) => {
+      if (pressedKeys[e.key]) pressedKeys[e.key] = false;
+    });
+
+    function allineaColonne() {
+        const container = document.getElementById("game-container");
+        const roomBox = document.getElementById("room-box");
+        const rightPane = document.getElementById("right-pane");
+        if (!container || !roomBox || !rightPane) return;
+        const off = roomBox.getBoundingClientRect().top - container.getBoundingClientRect().top;
+        const offset = Math.max(0, Math.round(off));
+        rightPane.style.setProperty('--right-offset', offset + 'px');
+    }
+
+window.addEventListener('resize', allineaColonne);
+
+    function animate() {
+      const box = document.getElementById("room-box");
+      const omino = document.getElementById("omino");
+      const doorsEl = document.getElementById("doors");
+      const boxRect = box.getBoundingClientRect();
+      const boxWidth = boxRect.width;
+      const boxHeight = boxRect.height;
+
+      if (pressedKeys["ArrowUp"]) ominoPos.y -= moveSpeed;
+      if (pressedKeys["ArrowDown"]) ominoPos.y += moveSpeed;
+      if (pressedKeys["ArrowLeft"]) ominoPos.x -= moveSpeed;
+      if (pressedKeys["ArrowRight"]) ominoPos.x += moveSpeed;
+
+      // Limiti di movimento nel box
+      ominoPos.x = Math.max(-boxWidth / 2 + 20, Math.min(boxWidth / 2 - 20, ominoPos.x));
+      ominoPos.y = Math.max(-boxHeight / 2 + 20, Math.min(boxHeight / 2 - 20, ominoPos.y));
+
+      // Aggiorna posizione reale dell'omino
+      omino.style.transform = `translate(calc(-50% + ${ominoPos.x}px), calc(-50% + ${ominoPos.y}px))`;
+
+      // Controllo collisione con le porte disabilitato
+
+      requestAnimationFrame(animate);
+    }
+
+    requestAnimationFrame(animate);
+
+    aggiornaStanza();
+    aggiornaMappa();
+    allineaColonne();
+    aggiornaZainoUI();
+    const levelBtn = document.getElementById('level2-btn');
+    if (levelBtn) {
+      levelBtn.style.display = 'block';
+      levelBtn.textContent = 'Livello 1';
+      levelBtn.style.pointerEvents = 'none';
+      levelBtn.style.cursor = 'default';
+      levelBtn.style.opacity = '0.6';
+
+      // Quando viene cliccato (una volta attivato), passa al Livello 2 e attiva dark mode
+      levelBtn.addEventListener('click', () => {
+        if (levelBtn.style.pointerEvents !== 'none') {
+          resetGame(true);
+        }
+      });
+    }
+  </script>
+</body>
+</html>
